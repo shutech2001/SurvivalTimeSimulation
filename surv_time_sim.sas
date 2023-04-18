@@ -1,16 +1,16 @@
-%let dir = C:\Users\Shimizu\‘—§Œ¤‹†ŠJ”­–@l ‘—§‘Ûˆã—ÃŒ¤‹†ƒZƒ“ƒ^[\biostat share - General\Mpox_RCT;
+%let dir = C:\Users\admin\å›½ç«‹ç ”ç©¶é–‹ç™ºæ³•äºº å›½ç«‹å›½éš›åŒ»ç™‚ç ”ç©¶ã‚»ãƒ³ã‚¿ãƒ¼\biostat share - General\Mpox_RCT;
 
 ods html close;
 
 /*
-ƒVƒ~ƒ…ƒŒ[ƒVƒ‡ƒ“ƒf[ƒ^¶¬—p‚Ìƒ}ƒNƒ
+ã‚·ãƒŸãƒ¥ãƒ¬ãƒ¼ã‚·ãƒ§ãƒ³ãƒ‡ãƒ¼ã‚¿ç”Ÿæˆç”¨ã®ãƒžã‚¯ãƒ­
 
-DATA : ƒVƒ~ƒ…ƒŒ[ƒVƒ‡ƒ“—p‚Éì¬‚·‚éƒf[ƒ^–¼
-SIM : ƒVƒ~ƒ…ƒŒ[ƒVƒ‡ƒ“‰ñ”
-N : —á”i—¼ŒQ‡‚í‚¹‚½‚à‚ÌD”¼•ª‚¸‚ÂŠeŒQ‚É•ª‚¯‚ç‚ê‚éDj
-CONTROL_PROP : ‘ÎÆŒQ‚Ì”­ÇŠm—¦
+DATA : ã‚·ãƒŸãƒ¥ãƒ¬ãƒ¼ã‚·ãƒ§ãƒ³ç”¨ã«ä½œæˆã™ã‚‹ãƒ‡ãƒ¼ã‚¿å
+SIM : ã‚·ãƒŸãƒ¥ãƒ¬ãƒ¼ã‚·ãƒ§ãƒ³å›žæ•°
+N : ä¾‹æ•°ï¼ˆä¸¡ç¾¤åˆã‚ã›ãŸã‚‚ã®ï¼ŽåŠåˆ†ãšã¤å„ç¾¤ã«åˆ†ã‘ã‚‰ã‚Œã‚‹ï¼Žï¼‰
+CONTROL_PROP : å¯¾ç…§ç¾¤ã®ç™ºç—‡ç¢ºçŽ‡
 VE : vaccine efficacy
-MONTH : ŠÏŽ@ŠúŠÔ
+MONTH : è¦³å¯ŸæœŸé–“
 */
 %macro DataGenerate(DATA=, SIM=, N=, CONTROL_PROP=, VE=, MONTH=);
 data &DATA.;
@@ -18,12 +18,12 @@ data &DATA.;
   do SIM = 1 to &SIM.;
     do ID = 1 to &N.;
       CONTROL_PROP = &CONTROL_PROP.; VE = &VE.;
-	  /* ‘ÎÆŒQ */
+	  /* å¯¾ç…§ç¾¤ */
       if ID <= &N./2 then do;
 	    GRP = 0; P = CONTROL_PROP; end;
 	  else do;
 	    GRP = 1; P = (1 - VE) / 100; end;
-      /* —ÝÏŠm—¦ = p ‚æ‚è 1/lambda‚ðŒvŽZ */
+      /* ç´¯ç©ç¢ºçŽ‡ = p ã‚ˆã‚Š 1/lambdaã‚’è¨ˆç®— */
       TIME = rand("exponential", -(356.25/12) * &MONTH./log(1-P));
 	  if TIME >= (356.25/12) * &MONTH. then do;
         TIME = (356.25/12) * &MONTH.;
@@ -37,26 +37,26 @@ run;
 %mend;
 
 /*
-P’l‚ðŒvŽZ‚·‚é‚½‚ß‚Ìƒ}ƒNƒ
-ƒŠƒXƒN·EƒƒOƒ‰ƒ“ƒNŒŸ’èEƒ|ƒAƒ\ƒ“‰ñ‹A‚Ì3‚Â‚Ì‰ðÍ‚ðs‚¤
+På€¤ã‚’è¨ˆç®—ã™ã‚‹ãŸã‚ã®ãƒžã‚¯ãƒ­
+ãƒªã‚¹ã‚¯å·®ãƒ»ãƒ­ã‚°ãƒ©ãƒ³ã‚¯æ¤œå®šãƒ»ãƒã‚¢ã‚½ãƒ³å›žå¸°ã®3ã¤ã®è§£æžã‚’è¡Œã†
 
-DATA : ‰ðÍ‘ÎÛ‚Æ‚È‚éƒf[ƒ^ƒZƒbƒg–¼
+DATA : è§£æžå¯¾è±¡ã¨ãªã‚‹ãƒ‡ãƒ¼ã‚¿ã‚»ãƒƒãƒˆå
 */
 %macro CalcPvalue(DATA=);
-  /* ƒŠƒXƒN· */
+  /* ãƒªã‚¹ã‚¯å·® */
   proc freq data = &DATA.;
     by sim;
     table grp*event / riskdiff(equal column=1 var=sample) chisq nocol nopercent;
     ods output PdiffTest=chisq(where=(Name1="P2_RDIF1"));
   run;
-  /* ƒƒOƒ‰ƒ“ƒN */
+  /* ãƒ­ã‚°ãƒ©ãƒ³ã‚¯ */
   proc lifetest data = &DATA.;
     by sim;
     time time*censor(1);
     strata / group = grp;
-    ods output HomTests=logrank(where=(Test="ƒƒOƒ‰ƒ“ƒN"));
+    ods output HomTests=logrank(where=(Test="ãƒ­ã‚°ãƒ©ãƒ³ã‚¯"));
   run;
-  /* ƒ|ƒAƒ\ƒ“‰ñ‹A */
+  /* ãƒã‚¢ã‚½ãƒ³å›žå¸° */
   proc genmod data=&DATA.;
     by sim;
     class grp;
@@ -66,25 +66,25 @@ DATA : ‰ðÍ‘ÎÛ‚Æ‚È‚éƒf[ƒ^ƒZƒbƒg–¼
 %mend;
 
 /*
-alpha error, beta error‚ðŒvŽZ‚·‚é‚½‚ß‚Ìƒ}ƒNƒ
-o—Íƒf[ƒ^‚ÍƒGƒ‰[‚Ì’l‚ª1‚Â‚¾‚¯Ši”[‚³‚ê‚½ƒf[ƒ^‚Æ‚È‚é
+alpha error, beta errorã‚’è¨ˆç®—ã™ã‚‹ãŸã‚ã®ãƒžã‚¯ãƒ­
+å‡ºåŠ›ãƒ‡ãƒ¼ã‚¿ã¯ã‚¨ãƒ©ãƒ¼ã®å€¤ãŒ1ã¤ã ã‘æ ¼ç´ã•ã‚ŒãŸãƒ‡ãƒ¼ã‚¿ã¨ãªã‚‹
 
-DATA : ‰ðÍŒ‹‰Ê‚ªŠi”[‚³‚ê‚½ƒf[ƒ^
-OUT : ƒGƒ‰[—¦‚ªŠi”[‚³‚ê‚éo—Íƒf[ƒ^‚Ì–¼‘O
-SIM : ƒVƒ~ƒ…ƒŒ[ƒVƒ‡ƒ“‰ñ”iƒGƒ‰[‚ðŽZo‚·‚é‚½‚ß‚É•K—vj
-PVAL : ‰ðÍŒ‹‰Êƒf[ƒ^‚ÅP’l‚Ì—ñ‚Ì–¼‘O
-ALPHA : —LˆÓ…€
-H0 : H0‚ª³‚µ‚¢‚©”Û‚©iif H0 is TRUE then calculate alpha error, otherwise calculate beta error (power)j
+DATA : è§£æžçµæžœãŒæ ¼ç´ã•ã‚ŒãŸãƒ‡ãƒ¼ã‚¿
+OUT : ã‚¨ãƒ©ãƒ¼çŽ‡ãŒæ ¼ç´ã•ã‚Œã‚‹å‡ºåŠ›ãƒ‡ãƒ¼ã‚¿ã®åå‰
+SIM : ã‚·ãƒŸãƒ¥ãƒ¬ãƒ¼ã‚·ãƒ§ãƒ³å›žæ•°ï¼ˆã‚¨ãƒ©ãƒ¼ã‚’ç®—å‡ºã™ã‚‹ãŸã‚ã«å¿…è¦ï¼‰
+PVAL : è§£æžçµæžœãƒ‡ãƒ¼ã‚¿ã§På€¤ã®åˆ—ã®åå‰
+ALPHA : æœ‰æ„æ°´æº–
+H0 : H0ãŒæ­£ã—ã„ã‹å¦ã‹ï¼ˆif H0 is TRUE then calculate alpha error, otherwise calculate beta error (power)ï¼‰
 */
 %macro calcErr(DATA=, OUT=, SIM=, PVAL=, ALPHA=, H0=);
   data &DATA.;
     set &DATA.;
 	if &PVAL. < &ALPHA. then rej_flg=1; else rej_flg=0; run;
-  /* ƒGƒ‰[ƒtƒ‰ƒO—§‚Ä‚é */
+  /* ã‚¨ãƒ©ãƒ¼ãƒ•ãƒ©ã‚°ç«‹ã¦ã‚‹ */
   data flg;
     set &DATA.;
-	retain rej 0; rej+rej_flg; *reject‚ð”‚¦ã‚°‚é (for alpha error);
-    retain acc 0; acc+abs(1-rej_flg); *accept‚ð”‚¦ã‚°‚é (for beta error);
+	retain rej 0; rej+rej_flg; *rejectã‚’æ•°ãˆä¸Šã’ã‚‹ (for alpha error);
+    retain acc 0; acc+abs(1-rej_flg); *acceptã‚’æ•°ãˆä¸Šã’ã‚‹ (for beta error);
 	%if &H0.=TRUE %then %do; alpha_error = rej/&sim.; %end;
 	%else %do; beta_error = acc/&sim.; power = 1 - beta_error; %end;
   run;
@@ -99,9 +99,9 @@ H0 : H0‚ª³‚µ‚¢‚©”Û‚©iif H0 is TRUE then calculate alpha error, otherwise calcu
 %mend;
 
 /*
-DATA : ƒf[ƒ^
-FILEPATH : ƒtƒ@ƒCƒ‹‚ÌƒpƒX
-SHEETNAME : ƒV[ƒg‚Ì–¼‘O
+DATA : ãƒ‡ãƒ¼ã‚¿
+FILEPATH : ãƒ•ã‚¡ã‚¤ãƒ«ã®ãƒ‘ã‚¹
+SHEETNAME : ã‚·ãƒ¼ãƒˆã®åå‰
 */
 %macro out_xlsx(DATA=, FILEPATH=, SHEETNAME=);
   proc export data = &data. outfile = &filepath. dbms = xlsx replace;
@@ -111,17 +111,17 @@ SHEETNAME : ƒV[ƒg‚Ì–¼‘O
 %mend;
 
 /*
-o—ÍŒ`Ž®‚ð®‚¦‚½ƒe[ƒuƒ‹‚ðo—Í‚·‚éƒ}ƒNƒ
+å‡ºåŠ›å½¢å¼ã‚’æ•´ãˆãŸãƒ†ãƒ¼ãƒ–ãƒ«ã‚’å‡ºåŠ›ã™ã‚‹ãƒžã‚¯ãƒ­
 
-DATA : ƒVƒ~ƒ…ƒŒ[ƒVƒ‡ƒ“—pƒf[ƒ^‚Ì–¼‘O
-SIM : ƒVƒ~ƒ…ƒŒ[ƒVƒ‡ƒ“‰ñ”
-N : —á”i—¼ŒQ‡‚í‚¹‚½‚à‚Ìj
-CONTROL_PROP : ‘ÎÆŒQ‚Ì”­ÇŠm—¦
+DATA : ã‚·ãƒŸãƒ¥ãƒ¬ãƒ¼ã‚·ãƒ§ãƒ³ç”¨ãƒ‡ãƒ¼ã‚¿ã®åå‰
+SIM : ã‚·ãƒŸãƒ¥ãƒ¬ãƒ¼ã‚·ãƒ§ãƒ³å›žæ•°
+N : ä¾‹æ•°ï¼ˆä¸¡ç¾¤åˆã‚ã›ãŸã‚‚ã®ï¼‰
+CONTROL_PROP : å¯¾ç…§ç¾¤ã®ç™ºç—‡ç¢ºçŽ‡
 VE : vaccine efficacy
-MONTH : ŠÏŽ@ŠúŠÔiŒŽj
-H0 : H0‚ª³‚µ‚¢‚©”Û‚©
-ALPHA : —LˆÓ…€
-SET : ‚·‚Å‚É‚ ‚éƒf[ƒ^ƒZƒbƒg‚ÉcŒ‹‡‚·‚é‚©”Û‚©i2‚Â–Ú‚ÌƒVƒiƒŠƒIˆÈ~‚Í‚à‚Æ‚à‚Æ‚ ‚éƒe[ƒuƒ‹‚ÉcŒ‹‡‚µ‚Ä‚¢‚­j
+MONTH : è¦³å¯ŸæœŸé–“ï¼ˆæœˆï¼‰
+H0 : H0ãŒæ­£ã—ã„ã‹å¦ã‹
+ALPHA : æœ‰æ„æ°´æº–
+SET : ã™ã§ã«ã‚ã‚‹ãƒ‡ãƒ¼ã‚¿ã‚»ãƒƒãƒˆã«ç¸¦çµåˆã™ã‚‹ã‹å¦ã‹ï¼ˆ2ã¤ç›®ã®ã‚·ãƒŠãƒªã‚ªä»¥é™ã¯ã‚‚ã¨ã‚‚ã¨ã‚ã‚‹ãƒ†ãƒ¼ãƒ–ãƒ«ã«ç¸¦çµåˆã—ã¦ã„ãï¼‰
 */
 %macro createErrorTab(DATA=, SIM=, N=, CONTROL_PROP=, VE=, MONTH=, H0=, ALPHA=, SET=);
   %DataGenerate(DATA=&DATA., SIM=&SIM., N=&N., CONTROL_PROP=&CONTROL_PROP., VE=&VE., MONTH=&MONTH.);
@@ -134,7 +134,7 @@ SET : ‚·‚Å‚É‚ ‚éƒf[ƒ^ƒZƒbƒg‚ÉcŒ‹‡‚·‚é‚©”Û‚©i2‚Â–Ú‚ÌƒVƒiƒŠƒIˆÈ~‚Í‚à‚Æ‚à‚Æ‚ ‚
     merge out1(rename=(power=prop_of_rej_chisq)) out2(rename=(power=prop_of_rej_logrank)) out3(rename=(power=prop_of_rej_poisson));
     MONTH = &MONTH.; CONTROL_PROP = &CONTROL_PROP.; VE = &VE.;
   run;
-  /* cŒ‹‡ */
+  /* ç¸¦çµåˆ */
   %if &SET. = TRUE %then %do;
     data outTab; set outTab partTab; run;
   %end;
@@ -143,19 +143,19 @@ SET : ‚·‚Å‚É‚ ‚éƒf[ƒ^ƒZƒbƒg‚ÉcŒ‹‡‚·‚é‚©”Û‚©i2‚Â–Ú‚ÌƒVƒiƒŠƒIˆÈ~‚Í‚à‚Æ‚à‚Æ‚ ‚
   %end;
 %mend;
 /*
-2TŠÔ–ˆ‚ÉƒCƒxƒ“ƒg‚ª‰½Œ”­¶‚µ‚Ä‚¢‚é‚©•ª‚©‚é‚æ‚¤‚ÈƒAƒEƒgƒvƒbƒg
-‘”(all_sum)‚Ægroup–ˆ(grp_sum) 
+2é€±é–“æ¯Žã«ã‚¤ãƒ™ãƒ³ãƒˆãŒä½•ä»¶ç™ºç”Ÿã—ã¦ã„ã‚‹ã‹åˆ†ã‹ã‚‹ã‚ˆã†ãªã‚¢ã‚¦ãƒˆãƒ—ãƒƒãƒˆ
+ç·æ•°(all_sum)ã¨groupæ¯Ž(grp_sum) 
 
-DATA : ƒVƒ~ƒ…ƒŒ[ƒVƒ‡ƒ“—p‚Ìƒf[ƒ^ƒZƒbƒg–¼
-MONTH : ŠÏŽ@ŠúŠÔ
-CONTROL_PROP : ‘ÎÆŒQ‚Ì”­ÇŠm—¦(ƒV[ƒg–¼‚É‹LÚ‚·‚é‚½‚ß)
-VE : vaccine efficacyiƒV[ƒg–¼‚É‹LÚ‚·‚é‚½‚ßj
+DATA : ã‚·ãƒŸãƒ¥ãƒ¬ãƒ¼ã‚·ãƒ§ãƒ³ç”¨ã®ãƒ‡ãƒ¼ã‚¿ã‚»ãƒƒãƒˆå
+MONTH : è¦³å¯ŸæœŸé–“
+CONTROL_PROP : å¯¾ç…§ç¾¤ã®ç™ºç—‡ç¢ºçŽ‡(ã‚·ãƒ¼ãƒˆåã«è¨˜è¼‰ã™ã‚‹ãŸã‚)
+VE : vaccine efficacyï¼ˆã‚·ãƒ¼ãƒˆåã«è¨˜è¼‰ã™ã‚‹ãŸã‚ï¼‰
 */
 %macro eventEvery2weeks(DATA=, MONTH=, CONTROL_PROP=, VE=);
   %do i=1 %to %sysfunc(int(((356.25/12) * &MONTH.) / 14 + 1));
     data tmpdata;
 	  set &DATA.;
-      /* 2TŠÔ‚¸‚ÂØ‚èo‚· */
+      /* 2é€±é–“ãšã¤åˆ‡ã‚Šå‡ºã™ */
 	  where TIME>=14*(&i.-1) & TIME<=14*&i.;
 	proc means sum;
 	  by sim;
@@ -172,10 +172,10 @@ VE : vaccine efficacyiƒV[ƒg–¼‚É‹LÚ‚·‚é‚½‚ßj
 	  merge grp0_sum&i.(rename=(event_sum=event_grp0_sum&i.)) grp1_sum&i.(rename=(event_sum=event_grp1_sum&i.));
 	  by sim;
 	  event_sum&i. = event_grp0_sum&i. + event_grp1_sum&i.;
-	  label event_sum&i. = "‘SƒCƒxƒ“ƒg”FŠúŠÔ&i." event_grp0_sum&i. = "‘ÎÆŒQƒCƒxƒ“ƒg”FŠúŠÔ&i." event_grp1_sum&i. = "ŽŽŒ±ŒQƒCƒxƒ“ƒg”FŠúŠÔ&i.";
+	  label event_sum&i. = "å…¨ã‚¤ãƒ™ãƒ³ãƒˆæ•°ï¼šæœŸé–“&i." event_grp0_sum&i. = "å¯¾ç…§ç¾¤ã‚¤ãƒ™ãƒ³ãƒˆæ•°ï¼šæœŸé–“&i." event_grp1_sum&i. = "è©¦é¨“ç¾¤ã‚¤ãƒ™ãƒ³ãƒˆæ•°ï¼šæœŸé–“&i.";
 	run;
 	/* merged data */
-    /* 2ŠúŠÔ–ÚˆÈ~‚Í‰¡Œ‹‡ */
+    /* 2æœŸé–“ç›®ä»¥é™ã¯æ¨ªçµåˆ */
     %if &i.=1 %then %do;
       data all_sum;
         set sum&i.(keep=sim event_sum&i.);
@@ -193,30 +193,30 @@ VE : vaccine efficacyiƒV[ƒg–¼‚É‹LÚ‚·‚é‚½‚ßj
 	  run;
     %end;
   %end;
-  %out_xlsx(DATA=all_sum, FILEPATH="&dir.\‹Ê–ì\eventEvery2weeks.xlsx", SHEETNAME="‘S—á CONTROL_PROP = &CONTROL_PROP. VE = &VE. MONTH = &MONTH.");
-  %out_xlsx(DATA=grp_sum, FILEPATH="&dir.\‹Ê–ì\eventEvery2weeks.xlsx", SHEETNAME="ƒOƒ‹[ƒv•Ê CONTROL_PROP = &CONTROL_PROP. VE = &VE. MONTH = &MONTH.");
+  %out_xlsx(DATA=all_sum, FILEPATH="&dir.\çŽ‰é‡Ž\eventEvery2weeks.xlsx", SHEETNAME="å…¨ä¾‹ CONTROL_PROP = &CONTROL_PROP. VE = &VE. MONTH = &MONTH.");
+  %out_xlsx(DATA=grp_sum, FILEPATH="&dir.\çŽ‰é‡Ž\eventEvery2weeks.xlsx", SHEETNAME="ã‚°ãƒ«ãƒ¼ãƒ—åˆ¥ CONTROL_PROP = &CONTROL_PROP. VE = &VE. MONTH = &MONTH.");
 %mend;
 
 /*
-CONTROL_PROP, VE‚Ì’l‚ð“®“I‚É•Ï‚¦‚ÄƒVƒ~ƒ…ƒŒ[ƒVƒ‡ƒ“‚ðŽÀs‚·‚é‚½‚ß‚Ìƒ}ƒNƒ
+CONTROL_PROP, VEã®å€¤ã‚’å‹•çš„ã«å¤‰ãˆã¦ã‚·ãƒŸãƒ¥ãƒ¬ãƒ¼ã‚·ãƒ§ãƒ³ã‚’å®Ÿè¡Œã™ã‚‹ãŸã‚ã®ãƒžã‚¯ãƒ­
 
-%doƒ}ƒNƒ‚ÌŽd—lãCƒXƒeƒbƒv•‚ÍintŒ^‚Å‚È‚¢‚Æ‚¢‚¯‚È‚¢‚½‚ßŽg‚¢•û—v’ˆÓ
+%doãƒžã‚¯ãƒ­ã®ä»•æ§˜ä¸Šï¼Œã‚¹ãƒ†ãƒƒãƒ—å¹…ã¯intåž‹ã§ãªã„ã¨ã„ã‘ãªã„ãŸã‚ä½¿ã„æ–¹è¦æ³¨æ„
 
-e.g., CONTROL_PROP‚ð0.005 ~ 0.010‚Ü‚Å0.001‚¸‚Â•Ï‚¦‚ÄƒVƒ~ƒ…ƒŒ[ƒVƒ‡ƒ“‚ðs‚¢‚½‚¢‚Æ‚«
+e.g., CONTROL_PROPã‚’0.005 ~ 0.010ã¾ã§0.001ãšã¤å¤‰ãˆã¦ã‚·ãƒŸãƒ¥ãƒ¬ãƒ¼ã‚·ãƒ§ãƒ³ã‚’è¡Œã„ãŸã„ã¨ã
   ==> CTRL_MIN = 5, CTRL_MAX = 10, CTRL_STEP = 1, CTRL_E = 1000
-         i.e., ‘S‚Ä®”’l‚É‚È‚é‚æ‚¤‚ÉCTRL_E”{‚·‚éiVE‚Ìê‡‚à“¯—lj
+         i.e., å…¨ã¦æ•´æ•°å€¤ã«ãªã‚‹ã‚ˆã†ã«CTRL_Eå€ã™ã‚‹ï¼ˆVEã®å ´åˆã‚‚åŒæ§˜ï¼‰
 
-<< ƒVƒ~ƒ…ƒŒ[ƒVƒ‡ƒ“‰ñ”“™‚ð•ÏX‚·‚éê‡‚ÍCƒ}ƒNƒ“à‚ÌSIM“™‚ð•ÏX >>
+<< ã‚·ãƒŸãƒ¥ãƒ¬ãƒ¼ã‚·ãƒ§ãƒ³å›žæ•°ç­‰ã‚’å¤‰æ›´ã™ã‚‹å ´åˆã¯ï¼Œãƒžã‚¯ãƒ­å†…ã®SIMç­‰ã‚’å¤‰æ›´ >>
 
-CTRL_MIN : CONTROL_PROP‚ÌÅ¬’l / CTRL_E
-CTRL_MAX : CONTROL_PROP‚ÌÅ‘å’l / CTRL_E
-CTRL_STEP : CONTROL_PROP‚ÌƒXƒeƒbƒv• / CTRL_E
+CTRL_MIN : CONTROL_PROPã®æœ€å°å€¤ / CTRL_E
+CTRL_MAX : CONTROL_PROPã®æœ€å¤§å€¤ / CTRL_E
+CTRL_STEP : CONTROL_PROPã®ã‚¹ãƒ†ãƒƒãƒ—å¹… / CTRL_E
 CTRL_E : 
-VE_MIN : VE‚ÌÅ¬’l / VE_E
-VE_MAX : VE‚ÌÅ‘å’l / VE_E
-VE_STEP : VE‚ÌƒXƒeƒbƒv• / VE_E
+VE_MIN : VEã®æœ€å°å€¤ / VE_E
+VE_MAX : VEã®æœ€å¤§å€¤ / VE_E
+VE_STEP : VEã®ã‚¹ãƒ†ãƒƒãƒ—å¹… / VE_E
 VE_E : 
-MONTH : ŠÏŽ@ŠúŠÔiƒV[ƒg–¼‚Æ‚µ‚Ä‚¢‚éj
+MONTH : è¦³å¯ŸæœŸé–“ï¼ˆã‚·ãƒ¼ãƒˆåã¨ã—ã¦ã„ã‚‹ï¼‰
 */
 %macro Validate_CTRL_VE(CTRL_MIN=, CTRL_MAX=, CTRL_STEP=, CTRL_E=, VE_MIN=, VE_MAX=, VE_STEP=, VE_E=, MONTH=);
   %do p_ = &CTRL_MIN. %to &CTRL_MAX. %by &CTRL_STEP.;
@@ -225,14 +225,14 @@ MONTH : ŠÏŽ@ŠúŠÔiƒV[ƒg–¼‚Æ‚µ‚Ä‚¢‚éj
       %let ve = %sysevalf(&ve_./&VE_E.);
       %if &p_. = &CTRL_MIN. and &ve_. = &VE_MIN. %then %createErrorTab(DATA=data, SIM=1000, N=5000, CONTROL_PROP=&p., VE=&ve., MONTH=&MONTH., H0=FALSE, ALPHA=.05, SET=FALSE);
       %else %createErrorTab(DATA=data, SIM=1000, N=5000, CONTROL_PROP=&p., VE=&ve., MONTH=&MONTH., H0=FALSE, ALPHA=.05, SET=TRUE);
-      /* 2T–ˆ‚ÌƒCƒxƒ“ƒg”‚ðo‚·‚Æ‚«‚Í‰º‚ÌƒRƒƒ“ƒgƒAƒEƒg‚àŽÀsiŽÀsŽžŠÔ‚©‚©‚éj */
+      /* 2é€±æ¯Žã®ã‚¤ãƒ™ãƒ³ãƒˆæ•°ã‚’å‡ºã™ã¨ãã¯ä¸‹ã®ã‚³ãƒ¡ãƒ³ãƒˆã‚¢ã‚¦ãƒˆã‚‚å®Ÿè¡Œï¼ˆå®Ÿè¡Œæ™‚é–“ã‹ã‹ã‚‹ï¼‰ */
       *%eventEvery2weeks(DATA=data, MONTH=&MONTH., CONTROL_PROP=&p., VE=&ve.);
     %end;
   %end;
-  %out_xlsx(data=outTab, filepath="&dir.\‹Ê–ì\error.xlsx", sheetname="MONTH=&MONTH.");
-  /* outTab‚ðíœ‚µ‚ÄˆÓŽ¯‚¹‚¸‚ÉŠù‚É‚ ‚éƒf[ƒ^‚ÉcŒ‹‡‚·‚é‚±‚Æ‚ð–h‚® */
+  %out_xlsx(data=outTab, filepath="&dir.\çŽ‰é‡Ž\error.xlsx", sheetname="MONTH=&MONTH.");
+  /* outTabã‚’å‰Šé™¤ã—ã¦æ„è­˜ã›ãšã«æ—¢ã«ã‚ã‚‹ãƒ‡ãƒ¼ã‚¿ã«ç¸¦çµåˆã™ã‚‹ã“ã¨ã‚’é˜²ã */
   proc delete data=outTab; run;
 %mend;
 
-/* CONTROL_PROP = 0.01, VE = 0.5~0.8‚Ì—á */
+/* CONTROL_PROP = 0.01, VE = 0.5~0.8ã®ä¾‹ */
 %Validate_CTRL_VE(CTRL_MIN=1, CTRL_MAX=1, CTRL_STEP=1, CTRL_E=100, VE_MIN=5, VE_MAX=8, VE_STEP=1, VE_E=10, MONTH=2);
