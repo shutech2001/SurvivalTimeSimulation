@@ -1,5 +1,12 @@
 %let dir = C:\Users\Shimizu\国立研究開発法人 国立国際医療研究センター\biostat share - General\Mpox_RCT;
 
+ods html close;
+
+
+
+control_prop VE prop_of_rej_chesq prop_of_rej_logrank prop_of_rej_poisson
+sheetname = "control_prop=, VE=, Month="
+
 %macro DataGenerate(DATA=, SIM=, N=, ctrl_rate=, vac_eff=, month=);
 data &DATA.;
   call streaminit(42);
@@ -31,7 +38,6 @@ run;
 %mend;
 
 %macro CalcPvalue(DATA=);
-  ods html close;
   proc freq data = &data.;
     by sim;
     table grp*event / riskdiff(equal column=1 var=sample) chisq nocol nopercent;
@@ -51,7 +57,6 @@ run;
     model event = grp / dist = poisson link = log offset = TIME;
     ods output ParameterEstimates=poisson(where=(ProbChiSq^=. and Parameter="grp"));
   run;
-  ods html;
 %mend;
 
 /*
@@ -61,7 +66,6 @@ alpha : 有意水準
 H0 : 帰無仮説が正しいか否か
 */
 %macro calcErr(data=, sim=, pval=, alpha=, H0=);
-  ods html;
   data &data.;
     set &data.;
 	if &pval. < &alpha. then rej_flg=1; else rej_flg=0; run;
@@ -80,8 +84,8 @@ H0 : 帰無仮説が正しいか否か
     %else %do; by descending beta_error; %end;
   run;
   /* エラー出力 */
-  data out; set flg(obs=1);
-  proc print data=out; run;
+  data out; set flg(obs=1); run;
+  /* proc print data=out; run; */
 %mend;
 /*
 data : データ
@@ -95,46 +99,12 @@ sheetname : シートの名前
   run;
 %mend;
 
-/* 
-SIM : シミュレーション回数
-N : 全例数
-ctrl_rate : 対照群の発症率（%表示）
-vac_eff : vaccine efficacy
-month : 追跡期間(月)
-H0 : 帰無仮説が正しいか否か
-
-e.g.,
-SIM = 100, N = 100, ctrl_rate = 1, vac_eff = 0.6, month = 2
-==> シミュレーション回数：100
-全例数：100
-対照群の発症率：1%
-vaccine efficacy：0.6
-2カ月間の追跡
-*/
-%macro outputErr(DATA=, SIM=, N=, ctrl_rate=, vac_eff=, month=, alpha=, H0=);
-%DataGenerate(DATA=&data., SIM=&SIM., N=&N., ctrl_rate=&ctrl_rate., vac_eff=&vac_eff., month=&month.);
-%CalcPvalue(DATA=&data.);
-/* 割合比較 */
-%calcErr(data=chisq, sim=&SIM., pval=nValue1, alpha=&alpha., H0=&H0.);
-%out_xlsx(data=out, filepath="&dir.\error\error_&month.month.xlsx", sheetname="割合比較　vaccine efficacy: &vac_eff.");
-/* ログランク検定 */
-%calcErr(data=logrank, sim=&SIM., pval=ProbChiSq, alpha=&alpha., H0=&H0.);
-%out_xlsx(data=out, filepath="&dir.\error\error_&month.month.xlsx", sheetname="ログランク　vaccine efficacy: &vac_eff.");
-/* ポアソン回帰 */
-%calcErr(data=poisson, sim=&SIM., pval=ProbChiSq, alpha=&alpha., H0=&H0.);
-%out_xlsx(data=out, filepath="&dir.\error\error_&month.month.xlsx", sheetname="ポアソン回帰　vaccine efficacy: &vac_eff.");
-%mend;
-
-%outputErr(DATA=scene1, SIM=1000, N=5000, ctrl_rate=0.01, vac_eff=0.6, month=2, alpha=0.05, H0=FALSE);
-
-
 /* 2週間おきにイベントが何件発生しているか分かるようなアウトプット */
 /* 総数(all_sum)とgroup毎(grp_sum) */
-%macro eventEvery2weeks(month=, vac_eff=);
-  ods html close;
+%macro eventEvery2weeks(data=, month=, vac_eff=);
   %do i=1 %to %sysfunc(int(((356.25/12) * &month.) / 14 + 1));
-    data ptdata;
-	  set stsimdata;
+    data tmpdata;
+	  set &data.;
 	  where TIME>=14*(&i.-1) & TIME<=14*&i.;
 	proc means sum;
 	  by sim;
@@ -171,43 +141,54 @@ vaccine efficacy：0.6
 	  run;
     %end;
   %end;
+  /*
   ods html;
   proc print data=all_sum; run;
   proc print data=grp_sum; run;
-  %out_xlsx(data=all_sum, filepath="&dir.\eventEvery2weeks\eventEvery2weeks_&month.month.xlsx", sheetname="全例 vaccine efficacy: &vac_eff.");
-  %out_xlsx(data=grp_sum, filepath="&dir.\eventEvery2weeks\eventEvery2weeks_&month.month.xlsx", sheetname="グループ別 vaccine efficacy: &vac_eff.");
+  */
+  %out_xlsx(data=all_sum, filepath="&dir.\玉野\eventEvery2weeks.xlsx", sheetname="全例 VacEff: &vac_eff. Month: &month.");
+  %out_xlsx(data=grp_sum, filepath="&dir.\玉野\eventEvery2weeks.xlsx", sheetname="グループ別 VacEff: &vac_eff. Month: &month.");
 %mend;
 
+/* 
+SIM : シミュレーション回数
+N : 全例数
+ctrl_rate : 対照群の発症率（%表示）
+vac_eff : vaccine efficacy
+month : 追跡期間(月)
+H0 : 帰無仮説が正しいか否か
 
-/* TODO: 
-%doで回す 
-マクロ変数のシート名にmonth含める*/
-%outErr(SIM=1000, N=2500, ctrl_rate=0.01, vac_eff=0.6, month=2, H0=FALSE);
-%eventEvery2weeks(month=2, vac_eff=0.6);
+e.g.,
+SIM = 100, N = 100, ctrl_rate = 1, vac_eff = 0.6, month = 2
+==> シミュレーション回数：100
+全例数：100
+対照群の発症率：1%
+vaccine efficacy：0.6
+2カ月間の追跡
+*/
+%macro output_Err_Event2weeks(DATA=, SIM=, N=, ctrl_rate=, vac_eff=, month=, alpha=, H0=);
+%DataGenerate(DATA=&data., SIM=&SIM., N=&N., ctrl_rate=&ctrl_rate., vac_eff=&vac_eff., month=&month.);
+%CalcPvalue(DATA=&data.);
+/* 割合比較 */
+%calcErr(data=chisq, sim=&SIM., pval=nValue1, alpha=&alpha., H0=&H0.);
+%out_xlsx(data=out, filepath="&dir.\玉野\error.xlsx", sheetname="割合比較　VacEff: &vac_eff. Month: &month.");
+/* ログランク検定 */
+%calcErr(data=logrank, sim=&SIM., pval=ProbChiSq, alpha=&alpha., H0=&H0.);
+%out_xlsx(data=out, filepath="&dir.\玉野\error.xlsx", sheetname="ログランク　VacEff: &vac_eff. Month: &month.");
+/* ポアソン回帰 */
+%calcErr(data=poisson, sim=&SIM., pval=ProbChiSq, alpha=&alpha., H0=&H0.);
+%out_xlsx(data=out, filepath="&dir.\玉野\error.xlsx", sheetname="ポアソン回帰　VacEff: &vac_eff. Month: &month.");
 
-%outErr(SIM=1000, N=400, ctrl_rate=1, vac_eff=0.65, month=2, H0=FALSE);
-%eventEvery2weeks(month=2, vac_eff=0.65);
+/* 2週間毎のイベント数 */
+%eventEvery2weeks(data=&data., month=&month., vac_eff=&vac_eff.);
+%mend;
 
-%outErr(SIM=1000, N=400, ctrl_rate=1, vac_eff=0.7, month=2, H0=FALSE);
-%eventEvery2weeks(month=2, vac_eff=0.7);
+%macro Validate_VacEff(min=, max=, step=, E=, month=);
+  %do iter=&min. %to &max. %by &step.;
+    %let eff = %sysevalf(&iter./&E.);
+    %output_Err_Event2weeks(DATA=scene1, SIM=1000, N=5000, ctrl_rate=0.01, vac_eff=&eff., month=&month., alpha=0.05, H0=FALSE);
+  %end;
+%mend;
 
-%outErr(SIM=1000, N=400, ctrl_rate=1, vac_eff=0.75, month=2, H0=FALSE);
-%eventEvery2weeks(month=2, vac_eff=0.75);
-
-%outErr(SIM=1000, N=400, ctrl_rate=1, vac_eff=0.8, month=2, H0=FALSE);
-%eventEvery2weeks(month=2, vac_eff=0.8);
-
-%outErr(SIM=1000, N=400, ctrl_rate=1, vac_eff=0.6, month=2.25, H0=FALSE);
-%eventEvery2weeks(month=2.25, vac_eff=0.6);
-
-%outErr(SIM=1000, N=400, ctrl_rate=1, vac_eff=0.65, month=2.25, H0=FALSE);
-%eventEvery2weeks(month=2.25, vac_eff=0.65);
-
-%outErr(SIM=1000, N=400, ctrl_rate=1, vac_eff=0.7, month=2.25, H0=FALSE);
-%eventEvery2weeks(month=2.25, vac_eff=0.7);
-
-%outErr(SIM=1000, N=400, ctrl_rate=1, vac_eff=0.75, month=2.25, H0=FALSE);
-%eventEvery2weeks(month=2.25, vac_eff=0.75);
-
-%outErr(SIM=1000, N=400, ctrl_rate=1, vac_eff=0.8, month=2.25, H0=FALSE);
-%eventEvery2weeks(month=2.25, vac_eff=0.8);
+%Validate_VacEff(min=60, max=80, step=5, E=100, month=2);
+%Validate_VacEff(min=60, max=80, step=5, E=100, month=2.25);
